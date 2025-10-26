@@ -6,11 +6,11 @@ import { z } from "zod";
 // Users table (for authentication)
 export const users = mysqlTable("users", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
-  username: text("username").notNull().unique(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
   password: text("password").notNull(),
   role: mysqlEnum("role", ['admin', 'teacher', 'parent']).notNull().default('admin'),
   fullName: text("full_name"),
-  email: text("email"),
+  email: varchar("email", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -37,7 +37,7 @@ export const students = mysqlTable("students", {
   arabicName: text("arabic_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
   gender: mysqlEnum("gender", ['male', 'female']).notNull(),
-  nationalId: text("national_id").unique(),
+  nationalId: varchar("national_id", { length: 50 }).unique(),
   enrollmentDate: date("enrollment_date").notNull(),
   classId: varchar("class_id", { length: 255 }).references(() => classes.id),
   parentName: text("parent_name").notNull(),
@@ -55,7 +55,7 @@ export const students = mysqlTable("students", {
 export const teachers = mysqlTable("teachers", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   arabicName: text("arabic_name").notNull(),
-  email: text("email").unique().notNull(),
+  email: varchar("email", { length: 255 }).unique().notNull(),
   phone: text("phone").notNull(),
   gender: mysqlEnum("gender", ['male', 'female']).notNull(),
   dateOfBirth: date("date_of_birth"),
@@ -74,7 +74,7 @@ export const subjects = mysqlTable("subjects", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   arabicName: text("arabic_name").notNull(),
-  code: text("code").unique().notNull(),
+  code: varchar("code", { length: 50 }).unique().notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });
