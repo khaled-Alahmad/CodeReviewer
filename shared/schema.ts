@@ -1,22 +1,22 @@
 import { sql, relations } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, date, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, int, decimal, date, timestamp, boolean, mysqlEnum } from "drizzle-orm/mysql-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Enums
-export const studentStatusEnum = pgEnum('student_status', ['active', 'suspended', 'graduated', 'transferred']);
-export const teacherStatusEnum = pgEnum('teacher_status', ['active', 'on_leave', 'resigned']);
-export const attendanceStatusEnum = pgEnum('attendance_status', ['present', 'absent', 'late', 'excused']);
-export const paymentStatusEnum = pgEnum('payment_status', ['paid', 'pending', 'overdue', 'partial']);
-export const genderEnum = pgEnum('gender', ['male', 'female']);
-export const assessmentTypeEnum = pgEnum('assessment_type', ['مذاكرة', 'امتحان نهائي', 'واجب', 'مشاركة', 'اختبار قصير', 'مشروع', 'نشاط']);
-export const dateTypeEnum = pgEnum('date_type', ['gregorian', 'hijri']);
-export const teacherAttendanceStatusEnum = pgEnum('teacher_attendance_status', ['present', 'absent', 'paid_leave', 'unpaid_leave', 'sick_leave']);
-export const userRoleEnum = pgEnum('user_role', ['admin', 'teacher', 'parent']);
+// Enums - MySQL uses mysqlEnum
+export const studentStatusEnum = mysqlEnum('student_status', ['active', 'suspended', 'graduated', 'transferred']);
+export const teacherStatusEnum = mysqlEnum('teacher_status', ['active', 'on_leave', 'resigned']);
+export const attendanceStatusEnum = mysqlEnum('attendance_status', ['present', 'absent', 'late', 'excused']);
+export const paymentStatusEnum = mysqlEnum('payment_status', ['paid', 'pending', 'overdue', 'partial']);
+export const genderEnum = mysqlEnum('gender', ['male', 'female']);
+export const assessmentTypeEnum = mysqlEnum('assessment_type', ['مذاكرة', 'امتحان نهائي', 'واجب', 'مشاركة', 'اختبار قصير', 'مشروع', 'نشاط']);
+export const dateTypeEnum = mysqlEnum('date_type', ['gregorian', 'hijri']);
+export const teacherAttendanceStatusEnum = mysqlEnum('teacher_attendance_status', ['present', 'absent', 'paid_leave', 'unpaid_leave', 'sick_leave']);
+export const userRoleEnum = mysqlEnum('user_role', ['admin', 'teacher', 'parent']);
 
 // Users table (for authentication)
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   role: userRoleEnum("role").notNull().default('admin'),
@@ -26,31 +26,31 @@ export const users = pgTable("users", {
 });
 
 // Linking table for teacher users
-export const teacherUsers = pgTable("teacher_users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id).unique(),
-  teacherId: varchar("teacher_id").notNull().references(() => teachers.id).unique(),
+export const teacherUsers = mysqlTable("teacher_users", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id).unique(),
+  teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id).unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Linking table for parent users with their children
-export const parentStudents = pgTable("parent_students", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id), // Parent user
-  studentId: varchar("student_id").notNull().references(() => students.id), // Child student
+export const parentStudents = mysqlTable("parent_students", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id), // Parent user
+  studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id), // Child student
   relationship: text("relationship").notNull().default('parent'), // parent, guardian, etc.
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Students table
-export const students = pgTable("students", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const students = mysqlTable("students", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   arabicName: text("arabic_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
   gender: genderEnum("gender").notNull(),
   nationalId: text("national_id").unique(),
   enrollmentDate: date("enrollment_date").notNull(),
-  classId: varchar("class_id").references(() => classes.id),
+  classId: varchar("class_id", { length: 255 }).references(() => classes.id),
   parentName: text("parent_name").notNull(),
   parentPhone: text("parent_phone").notNull(),
   parentEmail: text("parent_email"),
@@ -63,8 +63,8 @@ export const students = pgTable("students", {
 });
 
 // Teachers table
-export const teachers = pgTable("teachers", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const teachers = mysqlTable("teachers", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   arabicName: text("arabic_name").notNull(),
   email: text("email").unique().notNull(),
   phone: text("phone").notNull(),
@@ -81,8 +81,8 @@ export const teachers = pgTable("teachers", {
 });
 
 // Subjects table
-export const subjects = pgTable("subjects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const subjects = mysqlTable("subjects", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
   arabicName: text("arabic_name").notNull(),
   code: text("code").unique().notNull(),
@@ -91,81 +91,81 @@ export const subjects = pgTable("subjects", {
 });
 
 // Education Levels table (المراحل الدراسية)
-export const educationLevels = pgTable("education_levels", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const educationLevels = mysqlTable("education_levels", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(), // e.g., "الابتدائية", "المتوسطة", "الثانوية"
-  order: integer("order").notNull(), // للترتيب
+  order: int("order").notNull(), // للترتيب
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Classes/Sections table
-export const classes = pgTable("classes", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  educationLevelId: varchar("education_level_id").references(() => educationLevels.id), // المرحلة الدراسية
+export const classes = mysqlTable("classes", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  educationLevelId: varchar("education_level_id", { length: 255 }).references(() => educationLevels.id), // المرحلة الدراسية
   name: text("name").notNull(), // e.g., "الصف الأول"
   grade: text("grade").notNull(), // e.g., "الأول", "الثاني"
   section: text("section").notNull(), // أ، ب، ج
   academicYear: text("academic_year").notNull(), // e.g., "2024-2025"
-  capacity: integer("capacity").notNull().default(30),
+  capacity: int("capacity").notNull().default(30),
   roomNumber: text("room_number"),
-  teacherId: varchar("teacher_id").references(() => teachers.id), // Class teacher
+  teacherId: varchar("teacher_id", { length: 255 }).references(() => teachers.id), // Class teacher
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Grade-Subject Assignment (which subjects are taught in which grade)
-export const classSubjects = pgTable("class_subjects", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  educationLevelId: varchar("education_level_id").notNull().references(() => educationLevels.id),
+export const classSubjects = mysqlTable("class_subjects", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  educationLevelId: varchar("education_level_id", { length: 255 }).notNull().references(() => educationLevels.id),
   grade: text("grade").notNull(),
-  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
-  teacherId: varchar("teacher_id").references(() => teachers.id),
-  weeklyHours: integer("weekly_hours").notNull().default(2),
+  subjectId: varchar("subject_id", { length: 255 }).notNull().references(() => subjects.id),
+  teacherId: varchar("teacher_id", { length: 255 }).references(() => teachers.id),
+  weeklyHours: int("weekly_hours").notNull().default(2),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Section-Subject-Teacher Assignment (assigns teachers to specific subjects in specific sections)
-export const sectionSubjectTeachers = pgTable("section_subject_teachers", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  classId: varchar("class_id").notNull().references(() => classes.id), // الشعبة المحددة
-  subjectId: varchar("subject_id").notNull().references(() => subjects.id), // المادة
-  teacherId: varchar("teacher_id").notNull().references(() => teachers.id), // المدرس
+export const sectionSubjectTeachers = mysqlTable("section_subject_teachers", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  classId: varchar("class_id", { length: 255 }).notNull().references(() => classes.id), // الشعبة المحددة
+  subjectId: varchar("subject_id", { length: 255 }).notNull().references(() => subjects.id), // المادة
+  teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id), // المدرس
   isLead: boolean("is_lead").notNull().default(false), // هل هو المدرس الأساسي
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Grades/Assessments table
-export const grades = pgTable("grades", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentId: varchar("student_id").notNull().references(() => students.id),
-  subjectId: varchar("subject_id").notNull().references(() => subjects.id),
-  classId: varchar("class_id").notNull().references(() => classes.id),
+export const grades = mysqlTable("grades", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id),
+  subjectId: varchar("subject_id", { length: 255 }).notNull().references(() => subjects.id),
+  classId: varchar("class_id", { length: 255 }).notNull().references(() => classes.id),
   semester: text("semester").notNull(), // e.g., "الفصل الأول", "الفصل الثاني", "الفصل الثالث"
   assessmentType: assessmentTypeEnum("assessment_type").notNull(),
   score: decimal("score", { precision: 5, scale: 2 }).notNull(),
   maxScore: decimal("max_score", { precision: 5, scale: 2 }).notNull().default('100'),
   date: date("date").notNull(),
-  teacherId: varchar("teacher_id").references(() => teachers.id),
+  teacherId: varchar("teacher_id", { length: 255 }).references(() => teachers.id),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Attendance table
-export const attendance = pgTable("attendance", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentId: varchar("student_id").notNull().references(() => students.id),
-  classId: varchar("class_id").notNull().references(() => classes.id),
+export const attendance = mysqlTable("attendance", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id),
+  classId: varchar("class_id", { length: 255 }).notNull().references(() => classes.id),
   date: date("date").notNull(),
   status: attendanceStatusEnum("status").notNull(),
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => teachers.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => teachers.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Fees/Payments table
-export const payments = pgTable("payments", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentId: varchar("student_id").notNull().references(() => students.id),
+export const payments = mysqlTable("payments", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   dueDate: date("due_date").notNull(),
   paymentDate: date("payment_date"),
@@ -180,9 +180,9 @@ export const payments = pgTable("payments", {
 });
 
 // Student Accounts table (for tracking financial obligations and balance)
-export const studentAccounts = pgTable("student_accounts", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentId: varchar("student_id").notNull().unique().references(() => students.id),
+export const studentAccounts = mysqlTable("student_accounts", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  studentId: varchar("student_id", { length: 255 }).notNull().unique().references(() => students.id),
   totalAmountDue: decimal("total_amount_due", { precision: 10, scale: 2 }).notNull().default('0'),
   totalPaid: decimal("total_paid", { precision: 10, scale: 2 }).notNull().default('0'),
   currentBalance: decimal("current_balance", { precision: 10, scale: 2 }).notNull().default('0'),
@@ -193,36 +193,36 @@ export const studentAccounts = pgTable("student_accounts", {
 });
 
 // Payment Transactions table (for recording individual payments)
-export const paymentTransactions = pgTable("payment_transactions", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  studentAccountId: varchar("student_account_id").notNull().references(() => studentAccounts.id),
-  studentId: varchar("student_id").notNull().references(() => students.id),
+export const paymentTransactions = mysqlTable("payment_transactions", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  studentAccountId: varchar("student_account_id", { length: 255 }).notNull().references(() => studentAccounts.id),
+  studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   paymentDate: date("payment_date").notNull(),
   paymentMethod: text("payment_method"), // cash, bank_transfer, card, etc.
   receiptNumber: text("receipt_number"),
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => users.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Notifications/Communications table
-export const notifications = pgTable("notifications", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const notifications = mysqlTable("notifications", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   title: text("title").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull(), // announcement, alert, reminder, event
   targetAudience: text("target_audience").notNull(), // all, students, parents, teachers, specific_class
-  targetClassId: varchar("target_class_id").references(() => classes.id),
+  targetClassId: varchar("target_class_id", { length: 255 }).references(() => classes.id),
   priority: text("priority").notNull().default('normal'), // low, normal, high, urgent
   isRead: boolean("is_read").notNull().default(false),
-  createdBy: varchar("created_by").references(() => users.id),
+  createdBy: varchar("created_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // School Settings table
-export const schoolSettings = pgTable("school_settings", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const schoolSettings = mysqlTable("school_settings", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   schoolName: text("school_name").notNull(),
   schoolNameArabic: text("school_name_arabic").notNull(),
   currentAcademicYear: text("current_academic_year").notNull(),
@@ -238,9 +238,9 @@ export const schoolSettings = pgTable("school_settings", {
 });
 
 // Teacher Salaries table (monthly salary payments)
-export const teacherSalaries = pgTable("teacher_salaries", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teacherId: varchar("teacher_id").notNull().references(() => teachers.id),
+export const teacherSalaries = mysqlTable("teacher_salaries", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id),
   month: text("month").notNull(), // e.g., "2025-01"
   baseSalary: decimal("base_salary", { precision: 10, scale: 2 }).notNull(),
   bonuses: decimal("bonuses", { precision: 10, scale: 2 }).notNull().default('0'),
@@ -250,27 +250,27 @@ export const teacherSalaries = pgTable("teacher_salaries", {
   paymentDate: date("payment_date"),
   status: text("status").notNull().default('pending'), // pending, paid
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => users.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Teacher Advances table (salary advances)
-export const teacherAdvances = pgTable("teacher_advances", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teacherId: varchar("teacher_id").notNull().references(() => teachers.id),
+export const teacherAdvances = mysqlTable("teacher_advances", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   advanceDate: date("advance_date").notNull(),
   deductionMonth: text("deduction_month"), // e.g., "2025-02" - when it will be deducted
   status: text("status").notNull().default('pending'), // pending, deducted
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => users.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // School Expenses table (daily expenses)
-export const schoolExpenses = pgTable("school_expenses", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const schoolExpenses = mysqlTable("school_expenses", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   category: text("category").notNull(), // utilities, maintenance, supplies, transportation, etc.
   description: text("description").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -279,19 +279,19 @@ export const schoolExpenses = pgTable("school_expenses", {
   receiptNumber: text("receipt_number"),
   vendorName: text("vendor_name"),
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => users.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Teacher Attendance table (حضور وغياب المعلمين)
-export const teacherAttendance = pgTable("teacher_attendance", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teacherId: varchar("teacher_id").notNull().references(() => teachers.id),
+export const teacherAttendance = mysqlTable("teacher_attendance", {
+  id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+  teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id),
   date: date("date").notNull(),
   status: teacherAttendanceStatusEnum("status").notNull(),
   deductFromSalary: boolean("deduct_from_salary").notNull().default(false), // true for unpaid_leave
   notes: text("notes"),
-  recordedBy: varchar("recorded_by").references(() => users.id),
+  recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -6,7 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as DbUser, insertUserSchema } from "@shared/schema";
-import connectPg from "connect-pg-simple";
+import MySQLStoreFactory from "express-mysql-session";
 import { pool } from "./db";
 
 declare global {
@@ -50,13 +50,20 @@ export function setupAuth(app: Express) {
     throw new Error("SESSION_SECRET environment variable is required");
   }
 
-  const PostgresSessionStore = connectPg(session);
+  const MySQLStore = MySQLStoreFactory(session);
   
   const sessionSettings: session.SessionOptions = {
-    store: new PostgresSessionStore({ 
-      pool, 
-      createTableIfMissing: true 
-    }),
+    store: new MySQLStore({ 
+      createDatabaseTable: true,
+      schema: {
+        tableName: 'sessions',
+        columnNames: {
+          session_id: 'session_id',
+          expires: 'expires',
+          data: 'data'
+        }
+      }
+    }, pool),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
