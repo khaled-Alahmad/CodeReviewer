@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
+
 import { hashPassword } from "./auth";
 import { storage } from "./storage";
 
