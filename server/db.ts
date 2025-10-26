@@ -1,3 +1,9 @@
+
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
+
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from "@shared/schema";

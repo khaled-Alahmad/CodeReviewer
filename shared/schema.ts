@@ -3,23 +3,12 @@ import { mysqlTable, text, varchar, int, decimal, date, timestamp, boolean, mysq
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Enums - MySQL uses mysqlEnum
-export const studentStatusEnum = mysqlEnum('student_status', ['active', 'suspended', 'graduated', 'transferred']);
-export const teacherStatusEnum = mysqlEnum('teacher_status', ['active', 'on_leave', 'resigned']);
-export const attendanceStatusEnum = mysqlEnum('attendance_status', ['present', 'absent', 'late', 'excused']);
-export const paymentStatusEnum = mysqlEnum('payment_status', ['paid', 'pending', 'overdue', 'partial']);
-export const genderEnum = mysqlEnum('gender', ['male', 'female']);
-export const assessmentTypeEnum = mysqlEnum('assessment_type', ['مذاكرة', 'امتحان نهائي', 'واجب', 'مشاركة', 'اختبار قصير', 'مشروع', 'نشاط']);
-export const dateTypeEnum = mysqlEnum('date_type', ['gregorian', 'hijri']);
-export const teacherAttendanceStatusEnum = mysqlEnum('teacher_attendance_status', ['present', 'absent', 'paid_leave', 'unpaid_leave', 'sick_leave']);
-export const userRoleEnum = mysqlEnum('user_role', ['admin', 'teacher', 'parent']);
-
 // Users table (for authentication)
 export const users = mysqlTable("users", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: userRoleEnum("role").notNull().default('admin'),
+  role: mysqlEnum("role", ['admin', 'teacher', 'parent']).notNull().default('admin'),
   fullName: text("full_name"),
   email: text("email"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -47,7 +36,7 @@ export const students = mysqlTable("students", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   arabicName: text("arabic_name").notNull(),
   dateOfBirth: date("date_of_birth").notNull(),
-  gender: genderEnum("gender").notNull(),
+  gender: mysqlEnum("gender", ['male', 'female']).notNull(),
   nationalId: text("national_id").unique(),
   enrollmentDate: date("enrollment_date").notNull(),
   classId: varchar("class_id", { length: 255 }).references(() => classes.id),
@@ -56,7 +45,7 @@ export const students = mysqlTable("students", {
   parentEmail: text("parent_email"),
   address: text("address"),
   medicalNotes: text("medical_notes"),
-  status: studentStatusEnum("status").notNull().default('active'),
+  status: mysqlEnum("status", ['active', 'suspended', 'graduated', 'transferred']).notNull().default('active'),
   photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -68,13 +57,13 @@ export const teachers = mysqlTable("teachers", {
   arabicName: text("arabic_name").notNull(),
   email: text("email").unique().notNull(),
   phone: text("phone").notNull(),
-  gender: genderEnum("gender").notNull(),
+  gender: mysqlEnum("gender", ['male', 'female']).notNull(),
   dateOfBirth: date("date_of_birth"),
   hireDate: date("hire_date").notNull(),
   qualification: text("qualification"),
   specialization: text("specialization"),
   monthlySalary: decimal("monthly_salary", { precision: 10, scale: 2 }).notNull().default('0'),
-  status: teacherStatusEnum("status").notNull().default('active'),
+  status: mysqlEnum("status", ['active', 'on_leave', 'resigned']).notNull().default('active'),
   photoUrl: text("photo_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -141,7 +130,7 @@ export const grades = mysqlTable("grades", {
   subjectId: varchar("subject_id", { length: 255 }).notNull().references(() => subjects.id),
   classId: varchar("class_id", { length: 255 }).notNull().references(() => classes.id),
   semester: text("semester").notNull(), // e.g., "الفصل الأول", "الفصل الثاني", "الفصل الثالث"
-  assessmentType: assessmentTypeEnum("assessment_type").notNull(),
+  assessmentType: mysqlEnum("assessment_type", ['مذاكرة', 'امتحان نهائي', 'واجب', 'مشاركة', 'اختبار قصير', 'مشروع', 'نشاط']).notNull(),
   score: decimal("score", { precision: 5, scale: 2 }).notNull(),
   maxScore: decimal("max_score", { precision: 5, scale: 2 }).notNull().default('100'),
   date: date("date").notNull(),
@@ -156,7 +145,7 @@ export const attendance = mysqlTable("attendance", {
   studentId: varchar("student_id", { length: 255 }).notNull().references(() => students.id),
   classId: varchar("class_id", { length: 255 }).notNull().references(() => classes.id),
   date: date("date").notNull(),
-  status: attendanceStatusEnum("status").notNull(),
+  status: mysqlEnum("status", ['present', 'absent', 'late', 'excused']).notNull(),
   notes: text("notes"),
   recordedBy: varchar("recorded_by", { length: 255 }).references(() => teachers.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -169,7 +158,7 @@ export const payments = mysqlTable("payments", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   dueDate: date("due_date").notNull(),
   paymentDate: date("payment_date"),
-  status: paymentStatusEnum("status").notNull().default('pending'),
+  status: mysqlEnum("status", ['paid', 'pending', 'overdue', 'partial']).notNull().default('pending'),
   paymentType: text("payment_type").notNull(), // tuition, registration, transport, etc.
   academicYear: text("academic_year").notNull(),
   month: text("month"), // for monthly fees
@@ -227,7 +216,7 @@ export const schoolSettings = mysqlTable("school_settings", {
   schoolNameArabic: text("school_name_arabic").notNull(),
   currentAcademicYear: text("current_academic_year").notNull(),
   currency: text("currency").notNull().default('SAR'),
-  dateType: dateTypeEnum("date_type").notNull().default('gregorian'),
+  dateType: mysqlEnum("date_type", ['gregorian', 'hijri']).notNull().default('gregorian'),
   phone: text("phone"),
   email: text("email"),
   address: text("address"),
@@ -288,7 +277,7 @@ export const teacherAttendance = mysqlTable("teacher_attendance", {
   id: varchar("id", { length: 255 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
   teacherId: varchar("teacher_id", { length: 255 }).notNull().references(() => teachers.id),
   date: date("date").notNull(),
-  status: teacherAttendanceStatusEnum("status").notNull(),
+  status: mysqlEnum("status", ['present', 'absent', 'paid_leave', 'unpaid_leave', 'sick_leave']).notNull(),
   deductFromSalary: boolean("deduct_from_salary").notNull().default(false), // true for unpaid_leave
   notes: text("notes"),
   recordedBy: varchar("recorded_by", { length: 255 }).references(() => users.id),
